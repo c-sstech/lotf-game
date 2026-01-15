@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Conch Chronicles: Narrative Builder</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .font-serif {
+            font-family: 'Crimson Pro', serif;
+        }
+        .paper-bg {
+            background-color: #fdfbf7;
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 100% 2rem;
+            line-height: 2rem;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- GAME DATA ---
+
+        const CHARACTERS = [
+            {
+                id: 'ralph',
+                name: 'Ralph',
+                title: 'The Chief',
+                icon: 'ph-person-simple-run',
+                color: 'bg-blue-100 text-blue-700',
+                traits: ['Leadership', 'Order', 'The Conch'],
+                voice: 'Rational but increasingly desperate. Wants to maintain signal fire.'
+            },
+            {
+                id: 'jack',
+                name: 'Jack',
+                title: 'The Hunter',
+                icon: 'ph-knife',
+                color: 'bg-red-100 text-red-700',
+                traits: ['Power', 'Hunting', 'Savagery'],
+                voice: 'Aggressive, commanding, obsessed with the hunt.'
+            },
+            {
+                id: 'piggy',
+                name: 'Piggy',
+                title: 'The Intellectual',
+                icon: 'ph-eyeglasses',
+                color: 'bg-amber-100 text-amber-700',
+                traits: ['Logic', 'Science', 'Outsider'],
+                voice: 'Whiny but factual. Relies on "grown-up" rules.'
+            },
+            {
+                id: 'simon',
+                name: 'Simon',
+                title: 'The Visionary',
+                icon: 'ph-leaf',
+                color: 'bg-emerald-100 text-emerald-700',
+                traits: ['Empathy', 'Nature', 'Truth'],
+                voice: 'Quiet, observant, connects with the island spiritually.'
+            }
+        ];
+
+        const SETTINGS = [
+            {
+                id: 'beach',
+                name: 'The Platform',
+                desc: 'The meeting place. Bright sun, the lagoon, the conch.',
+                mood: 'Civilized yet fragile.'
+            },
+            {
+                id: 'castle',
+                name: 'Castle Rock',
+                desc: 'A fortress of pink rock. Caves, cliffs, separation.',
+                mood: 'Defensive, dangerous, savage.'
+            },
+            {
+                id: 'mountain',
+                name: 'The Mountain Top',
+                desc: 'The signal fire site. Windy, rocky, exposed.',
+                mood: 'Hopeful or terrifying (depending on the Beast).'
+            },
+            {
+                id: 'jungle',
+                name: 'The Deep Jungle',
+                desc: 'Creepers, heat, shadows, fruit trees.',
+                mood: 'Oppressive, mysterious, alive.'
+            }
+        ];
+
+        const THEMES = [
+            {
+                id: 'civ_sav',
+                name: 'Civilization vs. Savagery',
+                prompt_focus: 'Focus on the conflict between rules/order and the impulse to destroy/hunt.'
+            },
+            {
+                id: 'fear',
+                name: 'Fear of the Unknown',
+                prompt_focus: 'Focus on how the "Beast" (internal or external) influences decisions.'
+            },
+            {
+                id: 'power',
+                name: 'Power & Leadership',
+                prompt_focus: 'Focus on who has control and how they use it.'
+            }
+        ];
+
+        const STAGES = [
+            {
+                id: 1,
+                name: 'Inciting Incident',
+                definition: 'The event that disrupts the status quo and starts the story.',
+                getPrompt: (char, setting, theme) => `Start with ${char.name} at ${setting.name}. Something disrupts their routine. It could be a sound, a discovery, or a conflict with another boy. \n\n${theme.prompt_focus}`
+            },
+            {
+                id: 2,
+                name: 'Rising Action',
+                definition: 'Tension builds. The character faces obstacles in achieving their goal.',
+                getPrompt: (char, setting, theme) => `${char.name} tries to deal with the disruption but faces resistance. Is it the environment of ${setting.name}, or another character? Describe the struggle using sensory details.`
+            },
+            {
+                id: 3,
+                name: 'Climax',
+                definition: 'The turning point. The highest moment of tension.',
+                getPrompt: (char, setting, theme) => `The tension breaks. ${char.name} must make a crucial choice or take a decisive action. This moment defines who they are becoming.`
+            },
+            {
+                id: 4,
+                name: 'Resolution',
+                definition: 'The aftermath. The new reality is established.',
+                getPrompt: (char, setting, theme) => `Reflect on the consequences of that choice. How has ${char.name} changed? How does the setting of ${setting.name} look to them now?`
+            }
+        ];
+
+        function App() {
+            const [view, setView] = useState('setup'); // setup, writing, complete
+            const [step, setStep] = useState(0); // 0 to 3 for writing stages
+            
+            // Selections
+            const [selectedChar, setSelectedChar] = useState(null);
+            const [selectedSetting, setSelectedSetting] = useState(null);
+            const [selectedTheme, setSelectedTheme] = useState(null);
+            
+            // Writing Content
+            const [storyParts, setStoryParts] = useState(['', '', '', '']);
+
+            const handleStart = () => {
+                if (selectedChar && selectedSetting && selectedTheme) {
+                    setView('writing');
+                    setStep(0);
+                }
+            };
+
+            const updateStory = (text) => {
+                const newParts = [...storyParts];
+                newParts[step] = text;
+                setStoryParts(newParts);
+            };
+
+            const nextStep = () => {
+                if (step < STAGES.length - 1) {
+                    setStep(step + 1);
+                } else {
+                    setView('complete');
+                }
+            };
+
+            const prevStep = () => {
+                if (step > 0) {
+                    setStep(step - 1);
+                }
+            };
+
+            // --- COMPONENTS ---
+
+            const SelectionCard = ({ selected, onClick, title, subtitle, icon, color }) => (
+                <button 
+                    onClick={onClick}
+                    className={`
+                        text-left p-4 rounded-xl border-2 transition-all w-full h-full flex flex-col gap-2
+                        ${selected 
+                            ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' 
+                            : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-md'
+                        }
+                    `}
+                >
+                    <div className="flex justify-between items-start w-full">
+                        <span className={`text-2xl p-2 rounded-lg ${color || 'bg-gray-100 text-gray-600'}`}>
+                            <i className={`ph ${icon}`}></i>
+                        </span>
+                        {selected && <i className="ph ph-check-circle-fill text-indigo-600 text-xl"></i>}
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-900">{title}</h3>
+                        <p className="text-xs text-gray-500 leading-snug">{subtitle}</p>
+                    </div>
+                </button>
+            );
+
+            // --- VIEW: SETUP ---
+            if (view === 'setup') {
+                return (
+                    <div className="min-h-screen bg-slate-50 p-6 md:p-12">
+                        <div className="max-w-4xl mx-auto space-y-12 fade-in">
+                            
+                            {/* Header */}
+                            <div className="text-center space-y-2">
+                                <h1 className="text-4xl font-black text-slate-900 tracking-tight font-serif italic">The Conch Chronicles</h1>
+                                <p className="text-slate-600">Construct a scene from Lord of the Flies by analyzing character, setting, and theme.</p>
+                            </div>
+
+                            {/* 1. Choose Character */}
+                            <section className="space-y-4">
+                                <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2">
+                                    <span className="bg-slate-900 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold">1</span>
+                                    <h2 className="font-bold uppercase tracking-wide text-sm">Select a Character</h2>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {CHARACTERS.map(char => (
+                                        <SelectionCard 
+                                            key={char.id}
+                                            title={char.name}
+                                            subtitle={char.title}
+                                            icon={char.icon}
+                                            color={char.color}
+                                            selected={selectedChar?.id === char.id}
+                                            onClick={() => setSelectedChar(char)}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* 2. Choose Setting */}
+                            <section className="space-y-4">
+                                <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2">
+                                    <span className="bg-slate-900 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold">2</span>
+                                    <h2 className="font-bold uppercase tracking-wide text-sm">Select a Setting</h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {SETTINGS.map(setting => (
+                                        <SelectionCard 
+                                            key={setting.id}
+                                            title={setting.name}
+                                            subtitle={setting.desc}
+                                            icon="ph-map-trifold"
+                                            selected={selectedSetting?.id === setting.id}
+                                            onClick={() => setSelectedSetting(setting)}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* 3. Choose Theme */}
+                            <section className="space-y-4">
+                                <div className="flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2">
+                                    <span className="bg-slate-900 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold">3</span>
+                                    <h2 className="font-bold uppercase tracking-wide text-sm">Select a Theme Goal</h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {THEMES.map(theme => (
+                                        <SelectionCard 
+                                            key={theme.id}
+                                            title={theme.name}
+                                            subtitle="Focus your narrative on this core conflict."
+                                            icon="ph-scales"
+                                            selected={selectedTheme?.id === theme.id}
+                                            onClick={() => setSelectedTheme(theme)}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Start Button */}
+                            <div className="pt-8 flex justify-center">
+                                <button 
+                                    onClick={handleStart}
+                                    disabled={!selectedChar || !selectedSetting || !selectedTheme}
+                                    className="px-8 py-4 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 text-lg"
+                                >
+                                    Start Writing <i className="ph ph-pen-nib"></i>
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- VIEW: WRITING ---
+            if (view === 'writing') {
+                const currentStage = STAGES[step];
+                const prompt = currentStage.getPrompt(selectedChar, selectedSetting, selectedTheme);
+
+                return (
+                    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row">
+                        
+                        {/* Sidebar: Context & Guidance */}
+                        <div className="w-full md:w-1/3 bg-slate-900 text-slate-300 p-6 md:p-8 flex flex-col gap-6">
+                            <div>
+                                <h1 className="text-white font-serif italic text-2xl mb-1">Structure Guide</h1>
+                                <p className="text-sm text-slate-400">Step {step + 1} of 4</p>
+                            </div>
+
+                            {/* Selection Reminder */}
+                            <div className="bg-slate-800/50 p-4 rounded-lg text-sm space-y-2 border border-slate-700">
+                                <div className="flex items-center gap-2">
+                                    <i className={`ph ${selectedChar.icon} text-indigo-400`}></i>
+                                    <span className="text-white font-medium">{selectedChar.name}</span>
+                                    <span className="text-xs text-slate-500">({selectedChar.traits.join(', ')})</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <i className="ph ph-map-pin text-emerald-400"></i>
+                                    <span className="text-white font-medium">{selectedSetting.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <i className="ph ph-target text-amber-400"></i>
+                                    <span className="text-white font-medium">{selectedTheme.name}</span>
+                                </div>
+                            </div>
+
+                            {/* Stage Definition */}
+                            <div className="space-y-2">
+                                <h2 className="text-indigo-400 font-bold uppercase tracking-widest text-xs">Current Stage</h2>
+                                <h3 className="text-2xl font-bold text-white">{currentStage.name}</h3>
+                                <p className="leading-relaxed">{currentStage.definition}</p>
+                            </div>
+
+                            {/* Dynamic Prompt */}
+                            <div className="bg-indigo-900/30 border border-indigo-500/30 p-5 rounded-xl space-y-2">
+                                <h4 className="text-indigo-300 font-bold text-sm flex items-center gap-2">
+                                    <i className="ph ph-lightbulb"></i> Writing Prompt
+                                </h4>
+                                <p className="text-white italic leading-relaxed text-lg font-serif">
+                                    "{prompt}"
+                                </p>
+                            </div>
+
+                            <div className="mt-auto pt-8 flex justify-between items-center text-sm">
+                                <button 
+                                    onClick={prevStep} 
+                                    disabled={step === 0}
+                                    className="flex items-center gap-1 hover:text-white disabled:opacity-30 transition-colors"
+                                >
+                                    <i className="ph ph-arrow-left"></i> Back
+                                </button>
+                                <span>{storyParts[step].split(' ').filter(w => w.length > 0).length} words</span>
+                            </div>
+                        </div>
+
+                        {/* Main Writing Area */}
+                        <div className="w-full md:w-2/3 p-6 md:p-12 flex flex-col h-screen overflow-y-auto">
+                            <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col">
+                                <div className="bg-white shadow-sm border border-slate-200 rounded-t-lg p-3 bg-slate-50 border-b-0 flex items-center gap-2 text-slate-500 text-sm">
+                                    <div className="flex gap-1">
+                                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                        <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                        <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                                    </div>
+                                    <span className="ml-2 font-mono">draft_sequence_{step + 1}.txt</span>
+                                </div>
+                                
+                                <textarea 
+                                    value={storyParts[step]}
+                                    onChange={(e) => updateStory(e.target.value)}
+                                    placeholder="Start typing your scene here..."
+                                    className="flex-1 w-full p-8 text-lg md:text-xl font-serif leading-relaxed resize-none outline-none paper-bg text-slate-800 rounded-b-lg shadow-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20"
+                                    autoFocus
+                                />
+
+                                <div className="mt-6 flex justify-end">
+                                    <button 
+                                        onClick={nextStep}
+                                        disabled={storyParts[step].length < 10}
+                                        className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                    >
+                                        {step === STAGES.length - 1 ? 'Finish Story' : 'Next Stage'} 
+                                        <i className="ph ph-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                );
+            }
+
+            // --- VIEW: COMPLETE ---
+            if (view === 'complete') {
+                return (
+                    <div className="min-h-screen bg-slate-100 py-12 px-6">
+                        <div className="max-w-3xl mx-auto space-y-8 fade-in">
+                            
+                            {/* Congratulations Header */}
+                            <div className="text-center space-y-2">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+                                    <i className="ph ph-check text-3xl"></i>
+                                </div>
+                                <h1 className="text-3xl font-bold text-slate-900">Story Completed</h1>
+                                <p className="text-slate-600">You have successfully structured a narrative using Lord of the Flies themes.</p>
+                            </div>
+
+                            {/* The Story Book */}
+                            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                                <div className="bg-slate-900 p-8 text-white text-center">
+                                    <h2 className="text-4xl font-serif italic mb-2">The {selectedTheme.name.split(' ')[0]} of {selectedChar.name}</h2>
+                                    <p className="opacity-70 text-sm uppercase tracking-widest">
+                                        Setting: {selectedSetting.name} &nbsp;|&nbsp; Theme: {selectedTheme.name}
+                                    </p>
+                                </div>
+                                <div className="p-8 md:p-12 space-y-8">
+                                    {storyParts.map((part, index) => (
+                                        <div key={index} className="relative pl-6 border-l-2 border-slate-100 hover:border-indigo-200 transition-colors group">
+                                            <span className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-200 group-hover:bg-indigo-400 transition-colors"></span>
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                                                {STAGES[index].name}
+                                            </h3>
+                                            <p className="font-serif text-lg md:text-xl text-slate-800 leading-relaxed whitespace-pre-wrap">
+                                                {part || "(No text entered for this section)"}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-center gap-4">
+                                <button 
+                                    onClick={() => window.print()}
+                                    className="px-6 py-3 bg-white border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    <i className="ph ph-printer"></i> Print / Save PDF
+                                </button>
+                                <button 
+                                    onClick={() => window.location.reload()}
+                                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+                                >
+                                    Create New Story
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
