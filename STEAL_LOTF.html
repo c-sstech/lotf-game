@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOTF: The Survivor's Journal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #2c1a1a;
+            --paper: #f4ecd8;
+            --paper-shadow: #d7c9a8;
+            --wood: #3e2723;
+            --accent-red: #8a2be2; /* Changed to purple/dark for Effect */
+            --speech: #a93226;
+            --thoughts: #2471a3;
+            --effect: #884ea0;
+            --actions: #d68910;
+            --looks: #229954;
+        }
+
+        body { 
+            font-family: 'Crimson Text', serif; 
+            background-color: var(--wood);
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v5.1L6 20.48V5.5h2V18h10V0h2v18h2.9l-2.02-6H36v6h4v2h-4v2.5l-2.02 6H36v6h-4v2.5L20 20.5z' fill='%234e342e' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
+            color: var(--ink); 
+            margin: 0; 
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* THE BOOK CONTAINER */
+        .book-container { 
+            max-width: 1100px; 
+            width: 100%;
+            background: var(--paper);
+            box-shadow: 
+                inset 20px 0 50px rgba(0,0,0,0.1), /* Inner Spine Shadow */
+                inset -2px 0 5px rgba(0,0,0,0.1), /* Right Page Curve */
+                10px 10px 30px rgba(0,0,0,0.5), /* Drop Shadow */
+                0 0 0 5px #5d4037; /* Leather Cover Edge */
+            border-radius: 5px 15px 15px 5px;
+            padding: 40px 50px;
+            position: relative;
+            min-height: 800px;
+        }
+
+        /* THE SPINE DECORATION */
+        .book-container::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(0,0,0,0.1);
+            border-left: 1px dashed rgba(0,0,0,0.2);
+        }
+
+        /* TYPOGRAPHY */
+        h1, h2 { 
+            font-family: 'Cinzel', serif; 
+            text-align: center; 
+            color: #4e342e;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #4e342e;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        
+        h3 { font-family: 'Cinzel', serif; margin-bottom: 5px; }
+
+        .handwritten {
+            font-family: 'Patrick Hand', cursive;
+            color: #5d4037;
+        }
+
+        /* NAVIGATION & CONTROLS */
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px;
+            border-bottom: 1px double #8d6e63; 
+            padding-bottom: 15px;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: 2px solid #8d6e63;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .icon-btn:hover { background: #8d6e63; color: var(--paper); }
+
+        /* DRAG & DROP ZONES (THE CRATES) */
+        .bins-row { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 10px; 
+            margin-bottom: 30px; 
+        }
+        
+        .bin {
+            min-height: 200px;
+            background: rgba(0,0,0,0.03);
+            border: 2px dashed #8d6e63;
+            border-radius: 8px;
+            padding: 10px 5px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .bin h3 { font-size: 1.5rem; opacity: 0.7; margin-top: 5px; }
+        .bin-icon { font-size: 1.8rem; display: block; margin-bottom: 5px; }
+        .bin span { font-family: 'Patrick Hand', cursive; font-size: 1rem; color: #5d4037; display: block; line-height: 1.2; }
+
+        /* Bin Active States */
+        .bin.drag-over { background: rgba(141, 110, 99, 0.2); border-style: solid; transform: scale(1.02); }
+        .bin[data-type="Speech"] { border-color: var(--speech); }
+        .bin[data-type="Speech"] .bin-icon { color: var(--speech); }
+        
+        .bin[data-type="Thoughts"] { border-color: var(--thoughts); }
+        .bin[data-type="Thoughts"] .bin-icon { color: var(--thoughts); }
+        
+        .bin[data-type="Effect"] { border-color: var(--effect); }
+        .bin[data-type="Effect"] .bin-icon { color: var(--effect); }
+        
+        .bin[data-type="Actions"] { border-color: var(--actions); }
+        .bin[data-type="Actions"] .bin-icon { color: var(--actions); }
+        
+        .bin[data-type="Looks"] { border-color: var(--looks); }
+        .bin[data-type="Looks"] .bin-icon { color: var(--looks); }
+
+        /* SCRAP PAPER CARDS */
+        .deck { 
+            display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; 
+            padding: 20px; 
+            background-image: repeating-linear-gradient(45deg, #f0e6ce 0, #f0e6ce 10px, #eaddc0 10px, #eaddc0 20px);
+            border: 1px solid #cbbba0;
+            border-radius: 4px;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+            min-height: 180px;
+        }
+
+        .card {
+            background: #fffdf5;
+            padding: 15px;
+            width: 180px;
+            box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
+            font-family: 'Crimson Text', serif;
+            font-size: 0.95rem;
+            cursor: grab;
+            position: relative;
+            transition: transform 0.2s;
+            /* Tattered Effect */
+            clip-path: polygon(0% 0%, 100% 2%, 98% 100%, 2% 98%);
+        }
+        
+        .card:hover { transform: rotate(-2deg) scale(1.05); z-index: 10; }
+        .card:active { cursor: grabbing; }
+        
+        .card::before {
+            /* Pin Effect */
+            content: '📌';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+        }
+
+        .card strong { display: block; margin-top: 8px; font-family: 'Patrick Hand', cursive; color: #795548; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 4px;}
+
+        /* PAGE 2: JOURNAL ENTRY (LINED PAPER) */
+        .journal-entry {
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        /* The decorative tape on the journal entry */
+        .journal-entry::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 45%;
+            width: 60px;
+            height: 20px;
+            background: rgba(255, 235, 59, 0.4);
+            transform: rotate(-2deg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .journal-label {
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            color: #3e2723;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin-top: 10px;
+            padding: 0 10px;
+            border: none;
+            font-family: 'Patrick Hand', cursive;
+            font-size: 1.3rem;
+            line-height: 2rem;
+            background-color: transparent;
+            background-image: linear-gradient(transparent 1.9rem, #b0bec5 1.9rem);
+            background-size: 100% 2rem;
+            resize: none;
+            outline: none;
+            color: #2c3e50;
+        }
+
+        /* BUTTONS (WAX SEAL & WOOD) */
+        .btn-wood {
+            background: #5d4037;
+            color: #f4ecd8;
+            border: 2px solid #3e2723;
+            padding: 10px 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #3e2723;
+            border-radius: 4px;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.1s;
+        }
+        .btn-wood:active { transform: translateY(4px); box-shadow: none; }
+        .btn-wood:hover { background: #6d4c41; }
+
+        .page { display: none; animation: fadeIn 0.8s; }
+        .active-page { display: block; }
+
+        /* MODAL */
+        #guide-modal { 
+            display: none; 
+            background: #fffdf5; 
+            border: 2px solid #5d4037;
+            padding: 15px; 
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-family: 'Patrick Hand', cursive;
+        }
+        
+        .guide-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center; }
+
+        /* PRINT STYLES */
+        @media print {
+            body { background: white; padding: 0; display: block; }
+            .book-container { box-shadow: none; border: none; padding: 0; min-height: auto; }
+            .no-print, .deck, .bins-row, .btn-wood, .top-bar, .journal-entry::before { display: none !important; }
+            .page { display: block !important; }
+            #page1 { display: none !important; }
+            textarea { border: 1px solid #ccc; background: none; font-family: serif; height: auto; }
+            h1 { font-size: 18pt; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="book-container">
+    
+    <div class="top-bar no-print">
+        <button class="icon-btn" onclick="toggleGuide()" title="Field Guide">📖</button>
+        <div style="text-align: center;">
+            <div style="font-family: 'Patrick Hand'; font-size: 1.2rem; color: #27ae60;" id="save-status"></div>
+        </div>
+        <button class="icon-btn" onclick="resetProgress()" title="Burn Evidence (Reset)">🔥</button>
+    </div>
+
+    <div id="guide-modal">
+        <h4 style="margin:0 0 10px 0; text-align:center;">S.T.E.A.L. Field Guide</h4>
+        <div class="guide-grid">
+            <div><span style="font-size:2rem; color:var(--speech)">💬</span><br>Speech</div>
+            <div><span style="font-size:2rem; color:var(--thoughts)">💭</span><br>Thoughts</div>
+            <div><span style="font-size:2rem; color:var(--effect)">⚡</span><br>Effect</div>
+            <div><span style="font-size:2rem; color:var(--actions)">✋</span><br>Actions</div>
+            <div><span style="font-size:2rem; color:var(--looks)">👁️</span><br>Looks</div>
+        </div>
+    </div>
+
+    <div id="print-header" style="display:none;">
+        <h1>Island Survivor Report</h1>
+        <p><b>Subject:</b> Character Analysis (Chapters 1-5)</p>
+        <p><b>Analysis Score:</b> <span id="final-score-print">0</span>/15</p>
+        <hr>
+    </div>
+
+    <div id="page1" class="page active-page">
+        <h1><span style="font-size:2rem;">🐚</span> The Evidence Log</h1>
+        <p class="handwritten" style="text-align:center; font-size: 1.2rem;">
+            "We've got to have rules and obey them. After all, we're not savages."<br>
+            Sort the scraps of evidence into the correct journal section.
+        </p>
+
+        <div style="text-align:center; margin-bottom:15px; font-weight:bold; color:#5d4037;">
+            Evidence Collected: <span id="score">0</span>/15
+        </div>
+
+        <div class="bins-row">
+            <div class="bin" data-type="Speech" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <span class="bin-icon">💬</span>
+                <h3>S</h3><span>Speech</span>
+            </div>
+            <div class="bin" data-type="Thoughts" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <span class="bin-icon">💭</span>
+                <h3>T</h3><span>Thoughts</span>
+            </div>
+            <div class="bin" data-type="Effect" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <span class="bin-icon">⚡</span>
+                <h3>E</h3><span>Effect</span>
+            </div>
+            <div class="bin" data-type="Actions" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <span class="bin-icon">✋</span>
+                <h3>A</h3><span>Actions</span>
+            </div>
+            <div class="bin" data-type="Looks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <span class="bin-icon">👁️</span>
+                <h3>L</h3><span>Looks</span>
+            </div>
+        </div>
+
+        <div id="deck" class="deck"></div>
+    </div>
+
+    <div id="page2" class="page">
+        <h1><span style="font-size:2rem;">🔥</span> Survivor's Diary</h1>
+        <p class="handwritten" style="text-align:center; font-size: 1.2rem;">
+            Simulation Phase: Predict how the boys would react in our world.
+        </p>
+
+        <div style="margin-bottom:30px;">
+            <label class="handwritten" style="font-size:1.3rem;">Survivor Name:</label>
+            <input type="text" id="student-name" oninput="saveData()" 
+                   style="border:none; border-bottom: 2px dashed #5d4037; background:transparent; font-family:'Patrick Hand'; font-size:1.3rem; width: 60%; color:#3e2723;">
+        </div>
+
+        <div class="journal-entry">
+            <div class="journal-label"><span>💰</span> The Found Money</div>
+            <p style="font-size:0.9rem; margin-top:5px; font-style:italic;">Scenario: Jack finds $50. No one is looking. (Focus: Actions & Looks)</p>
+            <textarea id="ans1" oninput="saveData()" placeholder="Jack would..."></textarea>
+        </div>
+
+        <div class="journal-entry">
+            <div class="journal-label"><span>🚌</span> The Loud Bus</div>
+            <p style="font-size:0.9rem; margin-top:5px; font-style:italic;">Scenario: Piggy is on a bus with a loud passenger. (Focus: Speech & Effect)</p>
+            <textarea id="ans2" oninput="saveData()" placeholder="Piggy would..."></textarea>
+        </div>
+
+        <div class="journal-entry">
+            <div class="journal-label"><span>🛒</span> The Supermarket</div>
+            <p style="font-size:0.9rem; margin-top:5px; font-style:italic;">Scenario: Ralph can't pay for his groceries. (Focus: Thoughts & Speech)</p>
+            <textarea id="ans3" oninput="saveData()" placeholder="Ralph would..."></textarea>
+        </div>
+
+        <button class="btn-wood no-print" onclick="window.print()">🖨️ Archive to PDF</button>
+        <button class="btn-wood no-print" onclick="showPage('page1')" style="margin-top:10px; background:#8d6e63;">⬅ Back to Evidence</button>
+    </div>
+
+</div>
+
+<script>
+    // --- CONTENT DATA ---
+    const evidenceData = [
+        { id: 'c1', text: '"I got the conch! Just you listen! The first thing we ought to have made was shelters."', type: 'Speech', hint: 'Piggy (Ch 2)' },
+        { id: 'c2', text: '"I ought to be chief, because I\'m chapter chorister and head boy."', type: 'Speech', hint: 'Jack (Ch 1)' },
+        { id: 'c3', text: '"We want meat."', type: 'Speech', hint: 'Jack (Ch 3)' },
+        { id: 'c4', text: '"Maybe there is a beast... maybe it\'s only us."', type: 'Speech', hint: 'Simon (Ch 5)' },
+        { id: 'c5', text: 'He found himself understanding the wearisomeness of this life... where every path was an improvisation.', type: 'Thoughts', hint: 'Ralph (Ch 5)' },
+        { id: 'c6', text: 'He thought of the beast, there rose before his inward sight the picture of a human at once heroic and sick.', type: 'Thoughts', hint: 'Simon' },
+        { id: 'c7', text: 'There was the brilliant world of hunting, tactics, fierce exhilaration, skill...', type: 'Thoughts', hint: 'Jack' },
+        { id: 'c8', text: 'The circle of boys shrank away in horror.', type: 'Effect', hint: 'Group Reaction' },
+        { id: 'c9', text: 'Into the silence that followed, Jack slid his knife into a tree trunk.', type: 'Effect', hint: 'Reaction to Violence' },
+        { id: 'c10', text: 'They obeyed the summons of the conch, partly because Ralph blew it.', type: 'Effect', hint: 'Reaction to Authority' },
+        { id: 'c11', text: 'Then dog-like, uncomfortably on all fours yet unheeding his discomfort, he stole forward.', type: 'Actions', hint: 'Jack (Ch 3)' },
+        { id: 'c12', text: 'He snatched his knife out of the sheath and slammed it into a tree trunk.', type: 'Actions', hint: 'Jack (Ch 1)' },
+        { id: 'c13', text: 'Ralph stood on his head and grinned.', type: 'Actions', hint: 'Ralph (Ch 1)' },
+        { id: 'c14', text: 'Inside the floating cloak he was tall, thin, and bony; and his hair was red.', type: 'Looks', hint: 'Jack (Ch 1)' },
+        { id: 'c15', text: 'There was a mildness about his mouth and eyes that proclaimed no devil.', type: 'Looks', hint: 'Ralph (Ch 1)' }
+    ];
+
+    let score = 0;
+    const deck = document.getElementById('deck');
+
+    // --- INITIALIZATION ---
+    function init() {
+        evidenceData.sort(() => Math.random() - 0.5);
+        evidenceData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.draggable = true;
+            card.id = item.id;
+            card.innerHTML = `"${item.text}"<br><strong>${item.hint}</strong>`;
+            card.setAttribute('data-type', item.type);
+            card.addEventListener('dragstart', drag);
+            deck.appendChild(card);
+        });
+        loadSavedData();
+    }
+
+    // --- DRAG AND DROP ---
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.id);
+        ev.dataTransfer.setData("type", ev.target.getAttribute('data-type'));
+    }
+    function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+
+    function drop(ev) {
+        ev.preventDefault();
+        const bin = ev.currentTarget;
+        bin.classList.remove('drag-over');
+        
+        const cardId = ev.dataTransfer.getData("text");
+        const cardType = ev.dataTransfer.getData("type");
+        const binType = bin.getAttribute('data-type');
+        const cardElement = document.getElementById(cardId);
+
+        if (cardType === binType) {
+            // Success Animation
+            bin.appendChild(cardElement);
+            cardElement.draggable = false;
+            cardElement.style.transform = `rotate(${Math.random() * 6 - 3}deg)`;
+            cardElement.style.boxShadow = "none";
+            cardElement.style.background = "transparent";
+            cardElement.style.border = "none";
+            cardElement.style.borderBottom = "1px solid #aaa";
+            cardElement.style.width = "90%";
+            cardElement.style.margin = "5px auto";
+            // Replace Pin with Checkmark
+            cardElement.innerHTML = `<span style="color:green">✓</span> ` + cardElement.innerHTML.replace('📌','');
+
+            updateScore();
+            saveData();
+
+            if (document.querySelectorAll('#deck .card').length === 0) {
+                setTimeout(() => { 
+                    alert("Journal Page Complete. Turn to the Diary."); 
+                    showPage('page2'); 
+                }, 500);
+            }
+        } else {
+            // Fail Animation
+            bin.style.backgroundColor = 'rgba(231, 76, 60, 0.2)';
+            setTimeout(() => { bin.style.backgroundColor = 'rgba(0,0,0,0.03)'; }, 500);
+        }
+    }
+
+    // --- SAVE SYSTEM (localStorage) ---
+    function saveData() {
+        const state = {
+            cards: {},
+            inputs: {
+                name: document.getElementById('student-name').value,
+                ans1: document.getElementById('ans1').value,
+                ans2: document.getElementById('ans2').value,
+                ans3: document.getElementById('ans3').value
+            },
+            activePage: document.querySelector('.active-page').id
+        };
+
+        document.querySelectorAll('.card').forEach(card => {
+            if (card.parentElement.classList.contains('bin')) {
+                state.cards[card.id] = card.parentElement.getAttribute('data-type');
+            }
+        });
+
+        localStorage.setItem('lotf_journal_save', JSON.stringify(state));
+        
+        const status = document.getElementById('save-status');
+        status.innerText = "Saving...";
+        setTimeout(() => status.innerText = "Journal Updated", 1000);
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem('lotf_journal_save');
+        if (!saved) return;
+
+        const state = JSON.parse(saved);
+        
+        document.getElementById('student-name').value = state.inputs.name || "";
+        document.getElementById('ans1').value = state.inputs.ans1 || "";
+        document.getElementById('ans2').value = state.inputs.ans2 || "";
+        document.getElementById('ans3').value = state.inputs.ans3 || "";
+
+        for (const [cardId, binType] of Object.entries(state.cards)) {
+            const card = document.getElementById(cardId);
+            const bin = document.querySelector(`.bin[data-type="${binType}"]`);
+            if (bin && card) {
+                bin.appendChild(card);
+                card.draggable = false;
+                card.style.transform = `rotate(${Math.random() * 6 - 3}deg)`;
+                card.style.width = "90%";
+                card.style.background = "transparent";
+                card.style.boxShadow = "none";
+                card.style.borderBottom = "1px solid #aaa";
+                card.innerHTML = `<span style="color:green">✓</span> ` + card.innerHTML;
+            }
+        }
+        updateScore();
+        if (state.activePage === 'page2') showPage('page2');
+    }
+
+    function resetProgress() {
+        if(confirm("Burn this journal and start over?")) {
+            localStorage.removeItem('lotf_journal_save');
+            location.reload();
+        }
+    }
+
+    // --- UTILITIES ---
+    function updateScore() {
+        const placedCards = document.querySelectorAll('.bin .card').length;
+        document.getElementById('score').innerText = placedCards;
+        document.getElementById('final-score-print').innerText = placedCards;
+    }
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById(pageId).classList.add('active-page');
+        saveData();
+    }
+
+    function toggleGuide() {
+        const guide = document.getElementById('guide-modal');
+        guide.style.display = (guide.style.display === 'block') ? 'none' : 'block';
+    }
+
+    document.querySelectorAll('.bin').forEach(b => {
+        b.addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+    });
+
+    init();
+</script>
+
+</body>
+</html>
