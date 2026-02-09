@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOTF & Narrative Skills</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML2PDF Library for export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Merriweather:ital,wght@0,300;0,700;1,400&display=swap');
+
+        body {
+            font-family: 'Merriweather', serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+
+        h1, h2, h3, .btn-font, label {
+            font-family: 'Barlow Semi Condensed', sans-serif;
+        }
+
+        /* Quiz Styles */
+        .quiz-option:checked + label {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+        .correct-answer {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+            color: #14532d !important;
+        }
+        .wrong-answer {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #7f1d1d !important;
+        }
+
+        /* Conflict Selector Styles */
+        .conflict-radio:checked + label {
+            background-color: #f0f9ff; /* sky-50 */
+            border-color: #0ea5e9; /* sky-500 */
+            box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Page Transitions */
+        .page-section {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .hidden-page {
+            display: none;
+        }
+
+        /* Print/PDF Specifics */
+        @media print {
+            .no-print { display: none !important; }
+            .hidden-page { display: block !important; } /* Ensure all pages print */
+            textarea { border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Navigation / Header -->
+    <nav class="bg-slate-800 text-white p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide">LOTF & Narrative Skills</h1>
+                <p class="text-xs text-slate-400">Chapters 3 - 6 Analysis</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="saveProgress()" class="btn-font px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-sm transition shadow"><i class="fa-solid fa-floppy-disk mr-2"></i>Save</button>
+                <button onclick="generatePDF()" class="btn-font px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm transition shadow"><i class="fa-solid fa-file-pdf mr-2"></i>Export PDF</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Wrapper -->
+    <div id="main-worksheet" class="max-w-4xl mx-auto mt-8">
+
+        <!-- ================= PAGE 1 ================= -->
+        <div id="page-1" class="page-section">
+            
+            <!-- Student Info -->
+            <div class="p-6 bg-white rounded-xl shadow-sm mb-6 border border-slate-200">
+                <label class="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Student Name:</label>
+                <input type="text" id="studentName" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter your full name...">
+            </div>
+
+            <!-- Quiz Section -->
+            <section class="bg-white p-8 rounded-xl shadow-sm border-l-4 border-indigo-500">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Part 1: Comprehension Check (Ch 3-6)</h2>
+                    <span id="score-display" class="hidden text-xl font-bold px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg">Score: 0/15</span>
+                </div>
+                <p class="mb-6 text-slate-600 italic">Prove you know the context before analyzing the conflict.</p>
+
+                <form id="quiz-form" class="space-y-6">
+                    <!-- Quiz questions injected via JS -->
+                </form>
+
+                <div class="mt-8 text-center no-print flex flex-col items-center gap-4">
+                    <button type="button" onclick="checkQuiz()" class="btn-font px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg transition w-64">Submit Answers</button>
+                </div>
+            </section>
+
+            <!-- Navigation Button P1 -> P2 -->
+            <div class="mt-8 flex justify-end no-print">
+                <button onclick="switchPage(2)" class="btn-font px-6 py-3 bg-slate-700 hover:bg-slate-900 text-white rounded-lg shadow-lg transition flex items-center">
+                    Next Page <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 2 ================= -->
+        <div id="page-2" class="page-section hidden-page">
+            
+            <!-- Conflict Analysis Section -->
+            <section class="bg-white p-8 rounded-xl shadow-sm border-l-4 border-sky-500">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Part 2: Textual Analysis</h2>
+                <p class="text-slate-600 mb-6">
+                    <strong>Instructions:</strong> Identify the specific type of conflict present in the scene you are analyzing. Then, provide two distinct pieces of evidence from the text to support your choice.
+                </p>
+
+                <!-- Conflict Selection -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-bolt mr-2 text-sky-500"></i>Select Conflict Type:</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        
+                        <div>
+                            <input type="radio" name="conflictType" id="type1" value="Man vs. Man" class="conflict-radio hidden">
+                            <label for="type1" class="block p-4 border border-slate-200 rounded-lg cursor-pointer text-center hover:bg-slate-50 transition h-full flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-users text-2xl mb-2 text-red-500"></i>
+                                <span class="font-bold text-slate-700 block">Man vs. Man</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <input type="radio" name="conflictType" id="type2" value="Man vs. Self" class="conflict-radio hidden">
+                            <label for="type2" class="block p-4 border border-slate-200 rounded-lg cursor-pointer text-center hover:bg-slate-50 transition h-full flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-brain text-2xl mb-2 text-orange-500"></i>
+                                <span class="font-bold text-slate-700 block">Man vs. Self</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <input type="radio" name="conflictType" id="type3" value="Man vs. Nature" class="conflict-radio hidden">
+                            <label for="type3" class="block p-4 border border-slate-200 rounded-lg cursor-pointer text-center hover:bg-slate-50 transition h-full flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-tree text-2xl mb-2 text-green-500"></i>
+                                <span class="font-bold text-slate-700 block">Man vs. Nature</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <input type="radio" name="conflictType" id="type4" value="Man vs. Society" class="conflict-radio hidden">
+                            <label for="type4" class="block p-4 border border-slate-200 rounded-lg cursor-pointer text-center hover:bg-slate-50 transition h-full flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-people-group text-2xl mb-2 text-purple-500"></i>
+                                <span class="font-bold text-slate-700 block">Man vs. Society</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evidence Table -->
+                <div class="overflow-hidden border border-slate-200 rounded-lg">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-slate-100 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4 text-left font-bold text-slate-600 uppercase text-sm w-1/2">Textual Evidence (Quote)</th>
+                                <th class="py-3 px-4 text-left font-bold text-slate-600 uppercase text-sm w-1/2">Explanation / Context</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <!-- Row 1 -->
+                            <tr>
+                                <td class="p-3 align-top">
+                                    <label class="text-xs text-slate-400 font-bold mb-1 block">Evidence #1</label>
+                                    <textarea id="evidence1-quote" rows="4" class="w-full p-2 border border-slate-300 rounded bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none resize-none text-sm" placeholder='"Quote from the text..."'></textarea>
+                                </td>
+                                <td class="p-3 align-top">
+                                    <label class="text-xs text-slate-400 font-bold mb-1 block">Context</label>
+                                    <textarea id="evidence1-context" rows="4" class="w-full p-2 border border-slate-300 rounded bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none resize-none text-sm" placeholder="What is happening here and how does it show the conflict?"></textarea>
+                                </td>
+                            </tr>
+                            <!-- Row 2 -->
+                            <tr>
+                                <td class="p-3 align-top">
+                                    <label class="text-xs text-slate-400 font-bold mb-1 block">Evidence #2</label>
+                                    <textarea id="evidence2-quote" rows="4" class="w-full p-2 border border-slate-300 rounded bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none resize-none text-sm" placeholder='"Quote from the text..."'></textarea>
+                                </td>
+                                <td class="p-3 align-top">
+                                    <label class="text-xs text-slate-400 font-bold mb-1 block">Context</label>
+                                    <textarea id="evidence2-context" rows="4" class="w-full p-2 border border-slate-300 rounded bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none resize-none text-sm" placeholder="What is happening here and how does it show the conflict?"></textarea>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- STEAL Characterisation Section (Replaces Synthesis) -->
+                <div class="mt-8 border-t border-slate-100 pt-6">
+                    <h3 class="text-lg font-bold text-slate-700 mb-2 uppercase tracking-wide"><i class="fa-solid fa-pen-fancy mr-2 text-pink-500"></i>Part 3: STEAL Characterisation</h3>
+                    <p class="text-slate-600 mb-4 text-sm">
+                        <strong>Task:</strong> The paragraph below is "telling" instead of "showing". Rewrite it using the <strong>STEAL</strong> method (Speech, Thoughts, Effect on others, Actions, Looks) to create tension and engagement.
+                    </p>
+                    
+                    <div class="bg-slate-100 p-5 rounded-lg border-l-4 border-slate-400 mb-5 text-slate-700 italic leading-relaxed">
+                        "The teacher walked into the classroom holding the stack of test papers. I felt nervous because I knew I hadn't studied hard enough. She started calling out names one by one. I waited for my turn. Finally, she called my name. I walked to the front of the room. She looked disappointed. I took the paper and saw my mark. I had failed. I felt terrible and wanted to cry. I walked back to my seat."
+                    </div>
+
+                    <label class="block text-sm font-bold text-slate-500 mb-2 uppercase">Your Enhanced Rewrite:</label>
+                    <textarea id="input-steal" class="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-lg font-serif bg-pink-50" rows="8" placeholder="Start writing here... \n(Tip: Instead of saying 'I felt nervous', describe your sweaty palms or shaking knees...)"></textarea>
+                </div>
+
+            </section>
+
+            <!-- Navigation Button P2 -> P1 -->
+            <div class="mt-8 flex justify-between no-print">
+                <button onclick="switchPage(1)" class="btn-font px-6 py-3 bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-lg transition flex items-center">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Back
+                </button>
+                <button onclick="generatePDF()" class="btn-font px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg transition flex items-center animate-pulse">
+                    Finish & Export <i class="fa-solid fa-file-pdf ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+    </div> <!-- End Main Worksheet -->
+
+    <!-- FOOTER -->
+    <footer class="text-center text-slate-400 py-8 text-sm">
+        <p>&copy; 2026 Narrative Writing Unit | Secondary 2 Language Arts</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- PAGE NAVIGATION ---
+        function switchPage(pageNum) {
+            const p1 = document.getElementById('page-1');
+            const p2 = document.getElementById('page-2');
+            
+            // Fade out effect could be added here, but direct switch for responsiveness
+            if (pageNum === 1) {
+                p2.classList.add('hidden-page');
+                p1.classList.remove('hidden-page');
+                window.scrollTo(0, 0);
+            } else {
+                // Optional: Check if student name is filled before moving
+                const name = document.getElementById('studentName').value;
+                if (!name) {
+                    alert("Please enter your name before continuing.");
+                    return;
+                }
+                
+                p1.classList.add('hidden-page');
+                p2.classList.remove('hidden-page');
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // --- QUIZ DATA ---
+        const quizData = [
+            { q: "Ch 3: What is the primary source of conflict between Ralph and Jack?", a: ["Who should hold the conch", "Building huts vs. Hunting for meat", "Where to build the toilet", "Who should guard the fire"], correct: 1 },
+            { q: "Ch 3: Where does Simon go at the end of the chapter?", a: ["To the mountain", "To swim in the lagoon", "To a secret clearing in the jungle", "To Castle Rock"], correct: 2 },
+            { q: "Ch 4: Why does Roger throw stones at Henry but intentionally miss?", a: ["He has bad aim", "He is still conditioned by the rules of civilization", "Ralph yells at him to stop", "He wants to save the stones"], correct: 1 },
+            { q: "Ch 4: What happens to the signal fire while Jack is hunting?", a: ["It burns down the forest", "It goes out", "It turns green", "Piggy puts it out"], correct: 1 },
+            { q: "Ch 4: What does Jack do to his face before the hunt?", a: ["Washes it", "Paints it like a mask", "Cuts it", "Covers it with mud"], correct: 1 },
+            { q: "Ch 4: How does Ralph react when the ship passes?", a: ["He cheers", "He screams at Jack", "He cries silently", "He throws the conch"], correct: 1 },
+            { q: "Ch 4: What does Jack do to Piggy during the argument?", a: ["Steals his shoes", "Breaks one lens of his specs", "Hugs him", "Ignores him completely"], correct: 1 },
+            { q: "Ch 5: What is the purpose of the assembly Ralph calls?", a: ["To celebrate the hunt", "To set things straight/restore order", "To elect a new chief", "To plan a feast"], correct: 1 },
+            { q: "Ch 5: What new rule does Ralph make about fire?", a: ["Fire can only be on the mountain", "Everyone must carry a torch", "Jack controls the fire", "No fires allowed at night"], correct: 0 },
+            { q: "Ch 5: According to Percival, where does the beast come from?", a: ["The air", "The water", "The mountain", "The castle"], correct: 1 },
+            { q: "Ch 5: What does Simon say the beast might be?", a: ["A ghost", "A giant squid", "Only us", "Ralph"], correct: 2 },
+            { q: "Ch 5: Why doesn't Ralph blow the conch when the meeting breaks up?", a: ["He lost it", "He is afraid they won't come back", "Piggy tells him not to", "Jack stole it"], correct: 1 },
+            { q: "Ch 6: What actually lands on the mountain?", a: ["A dead parachutist", "A monster", "A plane", "A supply drop"], correct: 0 },
+            { q: "Ch 6: Who are the first to see the 'Beast from Air'?", a: ["Simon", "Ralph", "Samneric", "Roger"], correct: 2 },
+            { q: "Ch 6: What is Jack's reaction to the beast?", a: ["He wants to hide", "He wants to hunt it", "He cries", "He builds a fort"], correct: 1 }
+        ];
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            loadQuiz();
+            loadProgress();
+        };
+
+        // --- QUIZ LOGIC ---
+        function loadQuiz() {
+            const quizContainer = document.getElementById('quiz-form');
+            quizData.forEach((item, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = "pb-4 border-b border-slate-100 last:border-0";
+                
+                let optionsHtml = '';
+                item.a.forEach((opt, i) => {
+                    optionsHtml += `
+                        <div class="flex items-center mt-2">
+                            <input type="radio" name="q${index}" id="q${index}_opt${i}" value="${i}" class="quiz-option hidden">
+                            <label for="q${index}_opt${i}" class="w-full p-3 rounded border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-sm">
+                                <span class="w-6 h-6 inline-block text-center border rounded-full mr-2 text-slate-400 border-slate-300 bg-white check-circle">${String.fromCharCode(65+i)}</span>
+                                ${opt}
+                            </label>
+                        </div>
+                    `;
+                });
+
+                questionDiv.innerHTML = `
+                    <p class="font-bold text-slate-700 mb-2"><span class="text-indigo-500 mr-2">Q${index + 1}.</span> ${item.q}</p>
+                    ${optionsHtml}
+                `;
+                quizContainer.appendChild(questionDiv);
+            });
+        }
+
+        function checkQuiz() {
+            let score = 0;
+            quizData.forEach((item, index) => {
+                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                const allLabels = document.querySelectorAll(`input[name="q${index}"] + label`);
+                
+                // Reset styles
+                allLabels.forEach(l => {
+                    l.classList.remove('correct-answer', 'wrong-answer');
+                    l.classList.add('opacity-50'); // Dim all
+                });
+
+                if (selected) {
+                    const val = parseInt(selected.value);
+                    if (val === item.correct) {
+                        score++;
+                        selected.nextElementSibling.classList.add('correct-answer');
+                        selected.nextElementSibling.classList.remove('opacity-50');
+                    } else {
+                        selected.nextElementSibling.classList.add('wrong-answer');
+                        selected.nextElementSibling.classList.remove('opacity-50');
+                        // Highlight correct
+                        document.querySelector(`label[for="q${index}_opt${item.correct}"]`).classList.add('correct-answer');
+                        document.querySelector(`label[for="q${index}_opt${item.correct}"]`).classList.remove('opacity-50');
+                    }
+                } else {
+                     // Highlight correct if skipped
+                     document.querySelector(`label[for="q${index}_opt${item.correct}"]`).classList.add('correct-answer');
+                     document.querySelector(`label[for="q${index}_opt${item.correct}"]`).classList.remove('opacity-50');
+                }
+            });
+
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerText = `Score: ${score}/${quizData.length}`;
+            scoreDisplay.classList.remove('hidden');
+            scoreDisplay.scrollIntoView({ behavior: 'smooth' });
+            
+            // Save score
+            localStorage.setItem('lotf_quiz_score', score);
+        }
+
+        // --- SAVE & EXPORT LOGIC ---
+        function saveProgress() {
+            const selectedConflict = document.querySelector('input[name="conflictType"]:checked');
+            
+            const data = {
+                name: document.getElementById('studentName').value,
+                conflict: selectedConflict ? selectedConflict.value : '',
+                ev1q: document.getElementById('evidence1-quote').value,
+                ev1c: document.getElementById('evidence1-context').value,
+                ev2q: document.getElementById('evidence2-quote').value,
+                ev2c: document.getElementById('evidence2-context').value,
+                steal: document.getElementById('input-steal').value // Changed from synthesis
+            };
+            localStorage.setItem('lotf_analysis_data', JSON.stringify(data));
+            alert('Progress Saved to Browser!');
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('lotf_analysis_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('studentName').value = data.name || '';
+                document.getElementById('evidence1-quote').value = data.ev1q || '';
+                document.getElementById('evidence1-context').value = data.ev1c || '';
+                document.getElementById('evidence2-quote').value = data.ev2q || '';
+                document.getElementById('evidence2-context').value = data.ev2c || '';
+                document.getElementById('input-steal').value = data.steal || ''; // Changed from synthesis
+                
+                if (data.conflict) {
+                    const radio = document.querySelector(`input[name="conflictType"][value="${data.conflict}"]`);
+                    if(radio) radio.checked = true;
+                }
+            }
+        }
+
+        function generatePDF() {
+            const element = document.getElementById('main-worksheet');
+            const studentName = document.getElementById('studentName').value || 'Student';
+            
+            // 1. Unhide all pages so html2pdf can capture them
+            const p1 = document.getElementById('page-1');
+            const p2 = document.getElementById('page-2');
+            
+            // Store current visibility state to restore later
+            const p1WasHidden = p1.classList.contains('hidden-page');
+            const p2WasHidden = p2.classList.contains('hidden-page');
+            
+            p1.classList.remove('hidden-page');
+            p2.classList.remove('hidden-page');
+
+            // 2. Hide buttons for clean PDF
+            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+
+            // 3. Force textareas to show their values as HTML
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(ta => {
+                ta.innerHTML = ta.value.replace(/\n/g, '<br>'); // Preserve line breaks
+            });
+
+            // 4. Configuration for html2pdf
+            const opt = {
+                margin:       0.5,
+                filename:     `LOTF_Conflict_Analysis_${studentName}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // 5. Save & Restore
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Restore visibility
+                document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+                
+                // Restore page state
+                if (p1WasHidden) p1.classList.add('hidden-page');
+                if (p2WasHidden) p2.classList.add('hidden-page');
+            });
+        }
+    </script>
+</body>
+</html>
